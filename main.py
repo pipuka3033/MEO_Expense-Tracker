@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import json
 import os
-import uuid
 from datetime import datetime
 
 # Константы
@@ -83,10 +82,10 @@ class ExpenseTrackerApp:
         self.tree.heading("Категория", text="Категория")
         self.tree.heading("Сумма", text="Сумма")
 
-        self.tree.column("ID", width=50, anchor="center")
-        self.tree.column("Дата", width=100, anchor="center")
-        self.tree.column("Категория", width=150, anchor="center")
-        self.tree.column("Сумма", width=100, anchor="e")
+        self.tree.column("ID", width=50)
+        self.tree.column("Дата", width=100)
+        self.tree.column("Категория", width=150)
+        self.tree.column("Сумма", width=100)
 
         scrollbar = ttk.Scrollbar(table_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
@@ -101,34 +100,22 @@ class ExpenseTrackerApp:
         # Первоначальная отрисовка
         self.refresh_table()
 
-    def validate_input(self, amount_str, date_str, category_str):
-        """
-        Расширенная валидация ввода.
-        Возвращает (amount, date_obj) или (None, None) при ошибке.
-        """
-        # 1. Проверка на пустые поля
-        if not amount_str.strip():
-            messagebox.showerror("Ошибка ввода", "Поле 'Сумма' не может быть пустым.")
-            return None, None
-        
-        if not date_str.strip():
-            messagebox.showerror("Ошибка ввода", "Поле 'Дата' не может быть пустым.")
-            return None, None
-
-        # 2. Проверка суммы
+    def validate_input(self, amount_str, date_str):
+        """Валидация ввода: сумма и дата."""
+        # Проверка суммы
         try:
-            amount = float(amount_str.replace(',', '.')) # Поддержка запятой как разделителя
+            amount = float(amount_str)
             if amount <= 0:
-                raise ValueError("Сумма должна быть больше нуля.")
+                raise ValueError("Сумма должна быть положительной.")
         except ValueError:
-            messagebox.showerror("Ошибка ввода", "Некорректная сумма. Введите положительное число (например, 100 или 100.50).")
+            messagebox.showerror("Ошибка ввода", "Некорректная сумма. Введите положительное число.")
             return None, None
 
-        # 3. Проверка даты
+        # Проверка даты
         try:
             date_obj = datetime.strptime(date_str, "%d.%m.%Y")
         except ValueError:
-            messagebox.showerror("Ошибка ввода", "Некорректный формат даты.\nИспользуйте формат ДД.ММ.ГГГГ (например, 12.05.2026).")
+            messagebox.showerror("Ошибка ввода", "Некорректный формат даты. Используйте ДД.ММ.ГГГГ.")
             return None, None
 
         return amount, date_obj
@@ -138,13 +125,12 @@ class ExpenseTrackerApp:
         category = self.category_var.get()
         date_str = self.date_entry.get()
 
-        amount, date_obj = self.validate_input(amount_str, date_str, category)
+        amount, date_obj = self.validate_input(amount_str, date_str)
         if amount is None:
             return
 
-        # Генерация уникального ID через UUID
         new_expense = {
-            "id": str(uuid.uuid4()),
+            "id": len(self.expenses) + 1,  # Простой ID, можно улучшить
             "amount": amount,
             "category": category,
             "date": date_str
@@ -154,32 +140,31 @@ class ExpenseTrackerApp:
         self.save_data()
         self.refresh_table()
         
-        # Очистка поля суммы
+        # Очистка поля суммы и сброс даты на сегодня
         self.amount_entry.delete(0, tk.END)
-        # Дату оставляем текущей или можно очищать, по желанию
+        self.date_entry.delete(0, tk.END)
+        self.date_entry.insert(0, datetime.now().strftime("%d.%m.%Y"))
         
-        messagebox.showinfo("Успех", f"Расход {amount:.2f} руб. добавлен!")
+        messagebox.showinfo("Успех", "Расход добавлен!")
 
     def delete_expense(self):
         selected_item = self.tree.selection()
         if not selected_item:
-            messagebox.showwarning("Предупреждение", "Выберите расход в таблице для удаления.")
+            messagebox.showwarning("Предупреждение", "Выберите расход для удаления.")
             return
         
-        # Получаем ID из выбранной строки (первая колонка)
-        item_values = self.tree.item(selected_item[0], 'values')
-        expense_id = item_values[0]
+        item = self.tree.item(selected_item[0])
+        expense_id = item['values'][0]
         
-        # Удаляем из списка по ID
-        original_count = len(self.expenses)
+        # Удаляем из списка
         self.expenses = [e for e in self.expenses if e['id'] != expense_id]
         
-        if len(self.expenses) < original_count:
-            self.save_data()
-            self.refresh_table()
-            messagebox.showinfo("Успех", "Запись удалена.")
-        else:
-            messagebox.showerror("Ошибка", "Не удалось найти запись для удаления.")
+        # Пересчитываем ID для корректности (опционально, но лучше для чистоты)
+        for i, e in enumerate(self.expenses):
+            e['id'] = i + 1
+            
+        self.save_data()
+        self.refresh_table()
 
     def get_filtered_expenses(self):
         """Возвращает список расходов, прошедших фильтрацию."""
@@ -195,10 +180,10 @@ class ExpenseTrackerApp:
 
         # Фильтр по дате
         try:
-            start_date = datetime.strptime(start_date_str, "%d.%m.%Y") if start_date_str.strip() else None
-            end_date = datetime.strptime(end_date_str, "%d.%m.%Y") if end_date_str.strip() else None
+            start_date = datetime.strptime(start_date_str, "%d.%m.%Y") if start_date_str else None
+            end_date = datetime.strptime(end_date_str, "%d.%m.%Y") if end_date_str else None
         except ValueError:
-            messagebox.showerror("Ошибка фильтра", "Неверный формат даты в полях фильтра.\nИспользуйте ДД.ММ.ГГГГ.")
+            messagebox.showerror("Ошибка фильтра", "Неверный формат даты в фильтре.")
             return []
 
         if start_date or end_date:
@@ -212,7 +197,7 @@ class ExpenseTrackerApp:
                         continue
                     temp_filtered.append(e)
                 except ValueError:
-                    continue # Пропускаем записи с битой датой
+                    continue # Пропускаем записи с некорректной датой в БД
             filtered = temp_filtered
 
         return filtered
@@ -229,12 +214,9 @@ class ExpenseTrackerApp:
         filtered_expenses = self.get_filtered_expenses()
         
         total_sum = 0
-        # Для отображения используем короткий ID или просто порядковый номер в таблице, 
-        # но храним полный UUID. Для красоты выведем первые 8 символов UUID.
-        for i, expense in enumerate(filtered_expenses, 1):
-            short_id = str(expense['id'])[:8] + "..."
+        for expense in filtered_expenses:
             self.tree.insert("", tk.END, values=(
-                short_id,
+                expense['id'],
                 expense['date'],
                 expense['category'],
                 f"{expense['amount']:.2f}"
@@ -258,7 +240,7 @@ class ExpenseTrackerApp:
                 with open(DATA_FILE, 'r', encoding='utf-8') as f:
                     return json.load(f)
             except (json.JSONDecodeError, IOError) as e:
-                messagebox.showerror("Ошибка загрузки", f"Файл данных поврежден. Начинаем с чистого листа.\nОшибка: {e}")
+                messagebox.showerror("Ошибка загрузки", f"Не удалось загрузить данные: {e}")
                 return []
         return []
 
