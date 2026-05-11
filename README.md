@@ -57,33 +57,3 @@
 2. Tkinter (GUI)
 3. JSON (Хранение данных)
 4. Git (Контроль версий)
-   ```bash
-   
-   ---
-   
-   ### Инструкция по выкладке на GitHub
-   
-   1. **Подготовка:**
-      Убедитесь, что у вас установлен Git. Откройте терминал (командную строку) в папке с проектом.
-   
-   2. **Инициализация репозитория:**
-      ```bash
-      git init
-   3. Добавление файлов:
-      ```bash
-      git add .
-   4. Первый коммит:
-      ```bash
-      git commit -m "Initial commit: Training Planner app with GUI, JSON support and tests"
-   5. Создание репозитория на GitHub:
-      Зайдите на github.com.
-      Нажмите New repository.
-      Назовите его training-planner.
-      Не ставьте галочки "Initialize with README" (так как у нас уже есть свой).
-      Нажмите Create repository.
-   6. Привязка и отправка:
-      Скопируйте команды, которые покажет GitHub после создания репозитория (раздел "...or push an existing repository from the command line"). Обычно они выглядят так:
-      ```bash
-      git remote add origin https://github.com/ВАШ_НИКНЕЙМ/training-planner.git
-      git branch -M main
-      git push -u origin main
