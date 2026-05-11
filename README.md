@@ -35,3 +35,6 @@
 3. Запустите приложение командой:
 ```bash
 python main.py
+Для запуска тестов используйте команду:
+  ```bash
+  python -m unittest test_expense_tracker.py
