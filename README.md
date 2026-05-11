@@ -33,8 +33,8 @@
    cd expense-tracker
 2. Откройте терминал (командную строку) в папке с проектом.
 3. Запустите приложение командой:
-```bash
-python main.py
-Для запуска тестов используйте команду:
+   ```bash
+   python main.py
+4. Для запуска тестов используйте команду:
   ```bash
   python -m unittest test_expense_tracker.py
